@@ -2,11 +2,38 @@
 #include <SDL.h>
 #include "constants.h"
 
+const int map[MAP_ROWS][MAP_COLS] = {
+	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ,1, 1, 1, 1, 1, 1, 1},
+	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+	{1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1},
+	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1},
+	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1},
+	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1},
+	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1},
+	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+};
+
+struct Player {
+	float x;
+	float y;
+	float width;
+	float height;
+	int turnDirection; // -1 for left, +1 for right
+	int walkDirection; // -1 for backwards, +1 for forwards
+	float rotationAngle;
+	float walkSpeed;
+	float turnSpeed;
+} player;
+
 SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
 int isGameRunning = FALSE;
 
-float playerXPos, playerYPos;
 int ticksLastFrame;
 
 int initWindow(void) {
@@ -55,8 +82,34 @@ void destroyWindow(void) {
 }
 
 void setup(void) {
-	playerXPos = 0;
-	playerYPos = 0;
+	player.x = WINDOW_WIDTH / 2;
+	player.y = WINDOW_HEIGHT / 2;
+	player.width = 5;
+	player.height = 5;
+	player.turnDirection = 0;
+	player.walkDirection = 0;
+	player.rotationAngle = PI / 2.0;
+	player.walkSpeed = 100; // pixels/sec
+	player.turnSpeed = 45.0 * (PI / 180.0); // radians/sec 
+}
+
+void renderMap(void) {
+	for (int i = 0; i < MAP_ROWS; i++) {
+		for (int j = 0; j < MAP_COLS; j++) {
+			int tileX = j * TILE_SIZE;
+			int tileY = i * TILE_SIZE;
+			int tileColor = map[i][j] != 0 ? 255 : 0;
+			SDL_SetRenderDrawColor(renderer, tileColor, tileColor, tileColor, 255);
+			SDL_Rect mapTile = {
+				tileX * MINIMAP_SCALE_FACTOR,
+				tileY * MINIMAP_SCALE_FACTOR,
+				TILE_SIZE * MINIMAP_SCALE_FACTOR,
+				TILE_SIZE * MINIMAP_SCALE_FACTOR
+			};
+
+			SDL_RenderFillRect(renderer, &mapTile);
+		}
+	}
 }
 
 void processInput(void) {
@@ -80,6 +133,9 @@ void processInput(void) {
 
 void update(void) {
 	// sleep until target frame time length is reached
+	/*
+	
+	
 	int timeToWait = FRAME_TIME_LENGTH - (SDL_GetTicks() - ticksLastFrame);
 
 	if (timeToWait > 0 && timeToWait <= FRAME_TIME_LENGTH) {
@@ -89,18 +145,22 @@ void update(void) {
 	float deltaTime = (SDL_GetTicks() - ticksLastFrame) / 1000.0f;
 
 	ticksLastFrame = SDL_GetTicks();
+	*/
 
-	playerXPos+= 50 * deltaTime;
-	playerYPos+= 50 * deltaTime;
+	while (!SDL_TICKS_PASSED(SDL_GetTicks(), ticksLastFrame + FRAME_TIME_LENGTH));
+
+	float deltaTime = (SDL_GetTicks() - ticksLastFrame) / 1000.0f;
+
+	ticksLastFrame = SDL_GetTicks();
 }
 
 void render(void) {
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderClear(renderer);
 
-	SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
-	SDL_Rect rect = { playerXPos, playerYPos, 20, 20 };
-	SDL_RenderFillRect(renderer, &rect);
+	renderMap();
+	//renderRays();
+	//renderPlayer();
 
 	SDL_RenderPresent(renderer);
 }
