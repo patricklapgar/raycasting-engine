@@ -80,14 +80,18 @@ void processInput(void) {
 
 void update(void) {
 	// sleep until target frame time length is reached
-	while (!SDL_TICKS_PASSED(SDL_GetTicks(), ticksLastFrame + FRAME_TIME_LENGTH));
+	int timeToWait = FRAME_TIME_LENGTH - (SDL_GetTicks() - ticksLastFrame);
+
+	if (timeToWait > 0 && timeToWait <= FRAME_TIME_LENGTH) {
+		SDL_Delay(timeToWait);
+	}
 
 	float deltaTime = (SDL_GetTicks() - ticksLastFrame) / 1000.0f;
 
 	ticksLastFrame = SDL_GetTicks();
 
-	playerXPos+= 20 * deltaTime;
-	playerYPos+= 20 * deltaTime;
+	playerXPos+= 50 * deltaTime;
+	playerYPos+= 50 * deltaTime;
 }
 
 void render(void) {
