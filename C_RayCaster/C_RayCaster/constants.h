@@ -3,7 +3,7 @@
 #define TRUE 1
 
 #define PI 3.14159265
-#define TWO_PI = 6.28318530
+#define TWO_PI 6.28318530
 
 #define TILE_SIZE 64
 #define MAP_ROWS 13
@@ -12,10 +12,11 @@
 
 #define WINDOW_WIDTH (MAP_COLS * TILE_SIZE)
 #define WINDOW_HEIGHT (MAP_ROWS * TILE_SIZE)
+#define WALL_STRIP_WIDTH 15
 
 #define FOV_ANGLE (60 * (PI / 180))
 
-#define NUM_RAYS WINDOW_WIDTH
+#define NUM_RAYS (WINDOW_WIDTH / WALL_STRIP_WIDTH)
 
 
 #define FPS 30
