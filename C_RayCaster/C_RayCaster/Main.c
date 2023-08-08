@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <limits.h>
+#include <float.h>
 #include <SDL.h>
 #include "constants.h"
 
@@ -51,6 +52,9 @@ int isGameRunning = FALSE;
 
 int ticksLastFrame;
 
+Uint32* colorBuffer = NULL;
+SDL_Texture* colorBufferTexture;
+
 int initWindow(void) {
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
 		fprintf(stderr, "Error initializing SDL.\n");
@@ -91,6 +95,8 @@ int initWindow(void) {
 }
 
 void destroyWindow(void) {
+	free(colorBuffer);
+	SDL_DestroyTexture(colorBufferTexture);
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
@@ -107,6 +113,14 @@ void setup(void) {
 	player.walkSpeed = 100; // pixels/sec
 	player.turnSpeed = 70.0 * (PI / 180.0); // radians/sec 
 
+	colorBuffer = (Uint32*) malloc(sizeof(Uint32) * (Uint32)WINDOW_WIDTH * (Uint32)WINDOW_HEIGHT);
+	colorBufferTexture = SDL_CreateTexture(
+		renderer,
+		SDL_PIXELFORMAT_ARGB8888,
+		SDL_TEXTUREACCESS_STREAMING,
+		WINDOW_WIDTH,
+		WINDOW_HEIGHT
+	);
 }
 
 int isWall(float x, float y) {
@@ -259,11 +273,11 @@ void castRay(float angle, int strip) {
 	// Calculate both horizontal and vertical distances and choose the smallest value
 	float horizontalHitDistance = foundHorizontalWall
 		? distanceBetweenPoints(player.x, player.y, horizontalWallHitX, horizontalWallHitY)
-		: INT_MAX;
+		: FLT_MAX;
 
 	float verticalHitDistance = foundVerticalWall
 		? distanceBetweenPoints(player.x, player.y, verticalWallHitX, verticalWallHitY)
-		: INT_MAX;
+		: FLT_MAX;
 
 	if (verticalHitDistance < horizontalHitDistance) {
 		rays[strip].distance = verticalHitDistance;
@@ -381,10 +395,45 @@ void update(void) {
 	castAllRays();
 }
 
+void clearColorBuffer(Uint32 color) {
+	for (int x = 0; x < WINDOW_WIDTH; x++) {
+		for (int y = 0; y < WINDOW_HEIGHT; y++) {
+			if (x == y)
+				colorBuffer[(WINDOW_WIDTH * y) + x] = color;
+			else
+				colorBuffer[(WINDOW_WIDTH * y) + x] = 0xFFFF0000;
+		}
+	}
+}
+
+void renderColorBuffer(void) {
+	SDL_UpdateTexture(
+		colorBufferTexture, 
+		NULL,
+		colorBuffer,
+		(int)((Uint32)WINDOW_WIDTH * sizeof(Uint32))
+	);
+
+	SDL_RenderCopy(
+		renderer,
+		colorBufferTexture,
+		NULL,
+		NULL
+	);
+
+
+}
+
 void render(void) {
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderClear(renderer);
 
+	renderColorBuffer();
+	// Clear color buffer with black
+	//clearColorBuffer(0xFF000000);
+	clearColorBuffer(0xFF00EE30);
+
+	// Display minimap
 	renderMap();
 	renderRays();
 	renderPlayer();
