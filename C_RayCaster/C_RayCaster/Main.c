@@ -420,10 +420,18 @@ void generate3DProjection(void) {
 		int bottomWallPixel = (WINDOW_HEIGHT / 2) + (wallHeight / 2);
 		bottomWallPixel = bottomWallPixel > WINDOW_HEIGHT ? WINDOW_HEIGHT : bottomWallPixel;
 
+		// Set color for the ceiling
+		for (int j = 0; j < topWallPixel; j++)
+			colorBuffer[(WINDOW_WIDTH * j) + i] = CEILING_COLOR; // Gray-ish black color
+
 		// Render the wall from the top wall pixel to the bottom wall pixel
 		for (int y = topWallPixel; y < bottomWallPixel; y++) {
 			colorBuffer[(WINDOW_WIDTH * y) + i] = rays[i].wasHitVertical ? 0xFFFFFFFF : 0xFFCCCCCC;
 		}
+
+		// Set color for the floor
+		for (int j = bottomWallPixel; j < WINDOW_HEIGHT; j++)
+			colorBuffer[(WINDOW_WIDTH * j) + i] = FLOOR_COLOR; // Some kinda gray-ish
 	}
 }
 
