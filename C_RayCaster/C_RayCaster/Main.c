@@ -75,10 +75,18 @@ int initWindow(void) {
 		return FALSE;
 	}
 
+	/*
 	renderer = SDL_CreateRenderer(
 		window,
 		-1,
 		0
+	);
+	*/
+
+	renderer = SDL_CreateRenderer(
+		window,
+		-1,
+		SDL_RENDERER_PRESENTVSYNC
 	);
 
 	if (!renderer) {
@@ -113,7 +121,7 @@ void setup(void) {
 	player.walkSpeed = 100; // pixels/sec
 	player.turnSpeed = 70.0 * (PI / 180.0); // radians/sec 
 
-	colorBuffer = (Uint32*) malloc(sizeof(Uint32) * (Uint32)WINDOW_WIDTH * (Uint32)WINDOW_HEIGHT);
+	colorBuffer = (Uint32*)malloc(sizeof(Uint32) * WINDOW_WIDTH * WINDOW_HEIGHT);
 	colorBufferTexture = SDL_CreateTexture(
 		renderer,
 		SDL_PIXELFORMAT_ARGB8888,
@@ -180,6 +188,7 @@ void castRay(float angle, int strip) {
 	
 	int isRayFacingDown = angle > 0 && angle < PI;
 	int isRayFacingUp = !isRayFacingDown;
+
 	int isRayFacingRight = angle < 0.5 * PI || angle > 1.5 * PI;
 	int isRayFacingLeft = !isRayFacingRight;
 
@@ -314,6 +323,7 @@ void renderMap(void) {
 			int tileX = j * TILE_SIZE;
 			int tileY = i * TILE_SIZE;
 			int tileColor = map[i][j] != 0 ? 255 : 0;
+
 			SDL_SetRenderDrawColor(renderer, tileColor, tileColor, tileColor, 255);
 			SDL_Rect mapTile = {
 				tileX * MINIMAP_SCALE_FACTOR,
@@ -332,10 +342,10 @@ void renderRays(void) {
 	for (int i = 0; i < NUM_RAYS; i++) {
 		SDL_RenderDrawLine(
 			renderer,
-			player.x * MINIMAP_SCALE_FACTOR,
-			player.y * MINIMAP_SCALE_FACTOR,
-			rays[i].wallHitX * MINIMAP_SCALE_FACTOR,
-			rays[i].wallHitY * MINIMAP_SCALE_FACTOR
+			MINIMAP_SCALE_FACTOR * player.x,
+			MINIMAP_SCALE_FACTOR * player.y,
+			MINIMAP_SCALE_FACTOR * rays[i].wallHitX,
+			MINIMAP_SCALE_FACTOR * rays[i].wallHitY
 		);
 	}
 }
@@ -395,13 +405,32 @@ void update(void) {
 	castAllRays();
 }
 
+void generate3DProjection(void) {
+	for (int i = 0; i < NUM_RAYS; i++) {
+		// Do this to prevent fishbowl distortion
+		float perpDistance = rays[i].distance * cos(rays[i].rayAngle - player.rotationAngle);
+		float distanceProjectionPlane = (WINDOW_WIDTH / 2) / tan(FOV_ANGLE / 2);
+		float projectedWallHeight = (TILE_SIZE / perpDistance) * distanceProjectionPlane;
+		
+		int wallHeight = (int)projectedWallHeight;
+
+		int topWallPixel = (WINDOW_HEIGHT / 2) - (wallHeight / 2);
+		topWallPixel = topWallPixel < 0 ? 0 : topWallPixel;
+
+		int bottomWallPixel = (WINDOW_HEIGHT / 2) + (wallHeight / 2);
+		bottomWallPixel = bottomWallPixel > WINDOW_HEIGHT ? WINDOW_HEIGHT : bottomWallPixel;
+
+		// Render the wall from the top wall pixel to the bottom wall pixel
+		for (int y = topWallPixel; y < bottomWallPixel; y++) {
+			colorBuffer[(WINDOW_WIDTH * y) + i] = rays[i].wasHitVertical ? 0xFFFFFFFF : 0xFFCCCCCC;
+		}
+	}
+}
+
 void clearColorBuffer(Uint32 color) {
 	for (int x = 0; x < WINDOW_WIDTH; x++) {
 		for (int y = 0; y < WINDOW_HEIGHT; y++) {
-			if (x == y)
-				colorBuffer[(WINDOW_WIDTH * y) + x] = color;
-			else
-				colorBuffer[(WINDOW_WIDTH * y) + x] = 0xFFFF0000;
+			colorBuffer[(WINDOW_WIDTH * y) + x] = color;
 		}
 	}
 }
@@ -411,7 +440,7 @@ void renderColorBuffer(void) {
 		colorBufferTexture, 
 		NULL,
 		colorBuffer,
-		(int)((Uint32)WINDOW_WIDTH * sizeof(Uint32))
+		(int)(WINDOW_WIDTH * sizeof(Uint32))
 	);
 
 	SDL_RenderCopy(
@@ -420,18 +449,16 @@ void renderColorBuffer(void) {
 		NULL,
 		NULL
 	);
-
-
 }
 
 void render(void) {
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderClear(renderer);
 
+	generate3DProjection();
+
 	renderColorBuffer();
-	// Clear color buffer with black
-	//clearColorBuffer(0xFF000000);
-	clearColorBuffer(0xFF00EE30);
+	clearColorBuffer(0xFF000000);
 
 	// Display minimap
 	renderMap();
