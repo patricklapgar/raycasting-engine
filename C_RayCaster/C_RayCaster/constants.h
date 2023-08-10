@@ -14,7 +14,6 @@
 
 #define WINDOW_WIDTH (MAP_COLS * TILE_SIZE)
 #define WINDOW_HEIGHT (MAP_ROWS * TILE_SIZE)
-#define WALL_STRIP_WIDTH 15
 
 #define TEXTURE_WIDTH 64
 #define TEXTURE_HEIGHT 64
@@ -23,6 +22,11 @@
 
 #define NUM_RAYS WINDOW_WIDTH
 
+/* 
+Format of colors:
+	0xFF FF FF FF
+	  a  r  g  b
+*/
 #define CEILING_COLOR 0xFF333333
 #define FLOOR_COLOR 0xFF777777
 
