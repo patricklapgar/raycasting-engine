@@ -1,4 +1,9 @@
 #pragma once
+#ifndef CONSTANTS_H
+#define CONSTANTS_H
+
+#include <math.h>
+
 #define FALSE 0
 #define TRUE 1
 
@@ -15,12 +20,10 @@
 #define WINDOW_WIDTH (MAP_COLS * TILE_SIZE)
 #define WINDOW_HEIGHT (MAP_ROWS * TILE_SIZE)
 
-#define TEXTURE_WIDTH 64
-#define TEXTURE_HEIGHT 64
-
 #define FOV_ANGLE (60 * (PI / 180))
 
 #define NUM_RAYS WINDOW_WIDTH
+#define DIST_PROJ_PLANE ((WINDOW_WIDTH / 2) / tan(FOV_ANGLE / 2))
 
 /* 
 Format of colors:
@@ -32,3 +35,5 @@ Format of colors:
 
 #define FPS 30
 #define FRAME_TIME_LENGTH (1000 / FPS)
+
+#endif
