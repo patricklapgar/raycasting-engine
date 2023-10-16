@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <limits.h>
 #include <float.h>
 #include <SDL.h>
@@ -39,48 +40,49 @@ struct Ray {
 	float wallHitX;
 	float wallHitY;
 	float distance;
-	int wasHitVertical;
-	int isRayFacingUp;
-	int isRayFacingDown;
-	int isRayFacingLeft;
-	int isRayFacingRight;
+	bool wasHitVertical;
 	int wallHitContent;
 } rays[NUM_RAYS];
 
 SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
-int isGameRunning = FALSE;
+bool isGameRunning = false;
 int ticksLastFrame;
 
 uint32_t* colorBuffer = NULL;
 SDL_Texture* colorBufferTexture;
-uint32_t* textures[NUM_TEXTURES];
 
-int initializeWindow() {
+bool initializeWindow() {
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
 		fprintf(stderr, "Error initializing SDL.\n");
-		return FALSE;
+		return false;
 	}
+
+	SDL_DisplayMode display_mode;
+	SDL_GetCurrentDisplayMode(0, &display_mode);
+	int fullScreenWidth = display_mode.w;
+	int fullScreenHeight = display_mode.h;
+
 	window = SDL_CreateWindow(
 		NULL,
 		SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED,
-		WINDOW_WIDTH,
-		WINDOW_HEIGHT,
+		fullScreenWidth,
+		fullScreenHeight,
 		SDL_WINDOW_BORDERLESS
 	);
 	if (!window) {
 		fprintf(stderr, "Error creating SDL window.\n");
-		return FALSE;
+		return false;
 	}
 	renderer = SDL_CreateRenderer(window, -1, 0);
 	if (!renderer) {
 		fprintf(stderr, "Error creating SDL renderer.\n");
-		return FALSE;
+		return false;
 	}
 	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-	return TRUE;
+	return true;
 }
 
 void destroyWindow() {
@@ -118,9 +120,9 @@ void setup() {
 	loadWallTextures();
 }
 
-int mapHasWallAt(float x, float y) {
-	if (x < 0 || x > WINDOW_WIDTH || y < 0 || y > WINDOW_HEIGHT) {
-		return TRUE;
+bool mapHasWallAt(float x, float y) {
+	if (x < 0 || x >= (MAP_COLS * TILE_SIZE) || y < 0 || y >= (MAP_ROWS * TILE_SIZE)) {
+		return true;
 	}
 	int mapGridIndexX = floor(x / TILE_SIZE);
 	int mapGridIndexY = floor(y / TILE_SIZE);
@@ -186,7 +188,7 @@ void castRay(float rayAngle, int stripId) {
 	///////////////////////////////////////////
 	// HORIZONTAL RAY-GRID INTERSECTION CODE
 	///////////////////////////////////////////
-	int foundHorzWallHit = FALSE;
+	bool foundHorzWallHit = false;
 	float horzWallHitX = 0;
 	float horzWallHitY = 0;
 	int horzWallContent = 0;
@@ -210,7 +212,7 @@ void castRay(float rayAngle, int stripId) {
 	float nextHorzTouchY = yintercept;
 
 	// Increment xstep and ystep until we find a wall
-	while (nextHorzTouchX >= 0 && nextHorzTouchX <= WINDOW_WIDTH && nextHorzTouchY >= 0 && nextHorzTouchY <= WINDOW_HEIGHT) {
+	while (nextHorzTouchX >= 0 && nextHorzTouchX <= (MAP_COLS * TILE_SIZE) && nextHorzTouchY >= 0 && nextHorzTouchY <= (MAP_ROWS * TILE_SIZE)) {
 		float xToCheck = nextHorzTouchX;
 		float yToCheck = nextHorzTouchY + (isRayFacingUp ? -1 : 0);
 
@@ -219,7 +221,7 @@ void castRay(float rayAngle, int stripId) {
 			horzWallHitX = nextHorzTouchX;
 			horzWallHitY = nextHorzTouchY;
 			horzWallContent = map[(int)floor(yToCheck / TILE_SIZE)][(int)floor(xToCheck / TILE_SIZE)];
-			foundHorzWallHit = TRUE;
+			foundHorzWallHit = true;
 			break;
 		}
 		else {
@@ -231,7 +233,7 @@ void castRay(float rayAngle, int stripId) {
 	///////////////////////////////////////////
 	// VERTICAL RAY-GRID INTERSECTION CODE
 	///////////////////////////////////////////
-	int foundVertWallHit = FALSE;
+	bool foundVertWallHit = false;
 	float vertWallHitX = 0;
 	float vertWallHitY = 0;
 	int vertWallContent = 0;
@@ -255,7 +257,7 @@ void castRay(float rayAngle, int stripId) {
 	float nextVertTouchY = yintercept;
 
 	// Increment xstep and ystep until we find a wall
-	while (nextVertTouchX >= 0 && nextVertTouchX <= WINDOW_WIDTH && nextVertTouchY >= 0 && nextVertTouchY <= WINDOW_HEIGHT) {
+	while (nextVertTouchX >= 0 && nextVertTouchX <= (MAP_COLS * TILE_SIZE) && nextVertTouchY >= 0 && nextVertTouchY <= (MAP_ROWS * TILE_SIZE)) {
 		float xToCheck = nextVertTouchX + (isRayFacingLeft ? -1 : 0);
 		float yToCheck = nextVertTouchY;
 
@@ -264,7 +266,7 @@ void castRay(float rayAngle, int stripId) {
 			vertWallHitX = nextVertTouchX;
 			vertWallHitY = nextVertTouchY;
 			vertWallContent = map[(int)floor(yToCheck / TILE_SIZE)][(int)floor(xToCheck / TILE_SIZE)];
-			foundVertWallHit = TRUE;
+			foundVertWallHit = true;
 			break;
 		}
 		else {
@@ -286,26 +288,21 @@ void castRay(float rayAngle, int stripId) {
 		rays[stripId].wallHitX = vertWallHitX;
 		rays[stripId].wallHitY = vertWallHitY;
 		rays[stripId].wallHitContent = vertWallContent;
-		rays[stripId].wasHitVertical = TRUE;
+		rays[stripId].wasHitVertical = true;
+		rays[stripId].rayAngle = rayAngle;
 	}
 	else {
 		rays[stripId].distance = horzHitDistance;
 		rays[stripId].wallHitX = horzWallHitX;
 		rays[stripId].wallHitY = horzWallHitY;
 		rays[stripId].wallHitContent = horzWallContent;
-		rays[stripId].wasHitVertical = FALSE;
+		rays[stripId].wasHitVertical = false;
+		rays[stripId].rayAngle = rayAngle;
 	}
-	rays[stripId].rayAngle = rayAngle;
-	rays[stripId].isRayFacingDown = isRayFacingDown;
-	rays[stripId].isRayFacingUp = isRayFacingUp;
-	rays[stripId].isRayFacingLeft = isRayFacingLeft;
-	rays[stripId].isRayFacingRight = isRayFacingRight;
 }
 
 void castAllRays() {
-
 	for (int col = 0; col < NUM_RAYS; col++) {
-
 		float rayAngle = player.rotationAngle + atan((col - NUM_RAYS / 2) / DIST_PROJ_PLANE);
 		castRay(rayAngle, col);
 	}
@@ -348,12 +345,12 @@ void processInput() {
 	SDL_PollEvent(&event);
 	switch (event.type) {
 	case SDL_QUIT: {
-		isGameRunning = FALSE;
+		isGameRunning = false;
 		break;
 	}
 	case SDL_KEYDOWN: {
 		if (event.key.keysym.sym == SDLK_ESCAPE)
-			isGameRunning = FALSE;
+			isGameRunning = false;
 		if (event.key.keysym.sym == SDLK_UP)
 			player.walkDirection = +1;
 		if (event.key.keysym.sym == SDLK_DOWN)
@@ -391,8 +388,8 @@ void update() {
 }
 
 void generate3DProjection() {
-	for (int i = 0; i < NUM_RAYS; i++) {
-		float perpDistance = rays[i].distance * cos(rays[i].rayAngle - player.rotationAngle);
+	for (int x = 0; x < NUM_RAYS; x++) {
+		float perpDistance = rays[x].distance * cos(rays[x].rayAngle - player.rotationAngle);
 		float projectedWallHeight = (TILE_SIZE / perpDistance) * DIST_PROJ_PLANE;
 
 		int wallStripHeight = (int)projectedWallHeight;
@@ -405,18 +402,18 @@ void generate3DProjection() {
 
 		// set the color of the ceiling
 		for (int y = 0; y < wallTopPixel; y++)
-			colorBuffer[(WINDOW_WIDTH * y) + i] = CEILING_COLOR;
+			colorBuffer[(WINDOW_WIDTH * y) + x] = CEILING_COLOR;
 
-		int textureNum = rays[i].wallHitContent - 1;
+		int textureNum = rays[x].wallHitContent - 1;
 		int texture_width = wallTextures[textureNum].width;
 		int texture_height = wallTextures[textureNum].height;
 
 		// calculate texture offset X
 		int textureOffsetX;
-		if (rays[i].wasHitVertical)
-			textureOffsetX = (int)rays[i].wallHitY % texture_height;
+		if (rays[x].wasHitVertical)
+			textureOffsetX = (int)rays[x].wallHitY % texture_height;
 		else
-			textureOffsetX = (int)rays[i].wallHitX % texture_width;
+			textureOffsetX = (int)rays[x].wallHitX % texture_width;
 
 		// render the wall from wallTopPixel to wallBottomPixel
 		for (int y = wallTopPixel; y < wallBottomPixel; y++) {
@@ -426,19 +423,18 @@ void generate3DProjection() {
 
 			// set the color of the wall based on the color from the texture
 			uint32_t texelColor = wallTextures[textureNum].texture_buffer[(texture_width * textureOffsetY) + textureOffsetX];
-			colorBuffer[(WINDOW_WIDTH * y) + i] = texelColor;
+			colorBuffer[(WINDOW_WIDTH * y) + x] = texelColor;
 		}
 
 		// set the color of the floor
 		for (int y = wallBottomPixel; y < WINDOW_HEIGHT; y++)
-			colorBuffer[(WINDOW_WIDTH * y) + i] = FLOOR_COLOR;
+			colorBuffer[(WINDOW_WIDTH * y) + x] = FLOOR_COLOR;
 	}
 }
 
 void clearColorBuffer(uint32_t color) {
-	for (int x = 0; x < WINDOW_WIDTH; x++)
-		for (int y = 0; y < WINDOW_HEIGHT; y++)
-			colorBuffer[(WINDOW_WIDTH * y) + x] = color;
+	for (int i = 0; i < WINDOW_WIDTH * WINDOW_HEIGHT; i++)
+		colorBuffer[i] = color;
 }
 
 void renderColorBuffer() {
