@@ -2,6 +2,7 @@
 #ifndef DEFINITIONS_H
 #define DEFINITIONS_H
 
+#include <stdint.h>
 #include <math.h>
 
 #define PI 3.14159265
@@ -27,6 +28,7 @@ Format of colors:
 */
 #define CEILING_COLOR 0xFF333333
 #define FLOOR_COLOR 0xFF777777
+#define INTENSITY_FACTOR 0.7
 
 #define FPS 30
 #define FRAME_TIME_LENGTH (1000 / FPS)
