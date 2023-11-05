@@ -9,7 +9,7 @@
 #define TWO_PI 6.28318530
 
 #define TILE_SIZE 64
-#define NUM_TEXTURES 8
+#define NUM_TEXTURES 13
 
 #define MINIMAP_SCALE_FACTOR 0.2
 

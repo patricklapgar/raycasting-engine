@@ -10,15 +10,10 @@
 #include "player.h"
 #include "textures.h"
 #include "wall.h"
+#include "sprite.h"
 
 bool isGameRunning = false;
 int ticksLastFrame;
-
-/*
-void setup() {
-	loadWallTextures();
-}
-*/
 
 void processInput() {
 	SDL_Event event;
@@ -71,24 +66,26 @@ void render() {
 	clearColorBuffer(0xFF000000);
 
 	renderWallProjection();
+	renderSpriteProjection();
 
+	// The below function calls pertain to minimap objects
 	renderMap();
-	renderRays();
-	renderPlayer();
+	renderMapRays();
+	renderMapSprites();
+	renderMapPlayer();
 
 	renderColorBuffer();
 }
 
 void releaseResources(void) {
-	freeWallTextures();
+	freeTextures();
 	destroyWindow();
 }
 
 int main() {
 	isGameRunning = initializeWindow();
 
-	//setup();
-	loadWallTextures();
+	loadTextures();
 
 	while (isGameRunning) {
 		processInput();

@@ -9,31 +9,33 @@ static const char* textureFilenames[NUM_TEXTURES] = {
 	"colorstone.png",
 	"bluestone.png",
 	"wood.png",
-	"eagle.png"
+	"eagle.png",
+	"barrel.png",
+	"table.png",
+	"guard.png",
+	"light.png",
+	"armor.png"
 };
 
 
-void loadWallTextures(void) {
+void loadTextures(void) {
 	for (int i = 0; i < NUM_TEXTURES; i++) {
-		upng_t* upng;
-		upng = upng_new_from_file(textureFilenames[i]);
+		upng_t* upng = upng_new_from_file(textureFilenames[i]);
 		if (upng != NULL) {
 			upng_decode(upng);
 			
-			if (upng_get_error(upng) == UPNG_EOK) {
-				wallTextures[i].upngTexture = upng;
-				wallTextures[i].width = upng_get_width(upng);
-				wallTextures[i].height = upng_get_height(upng);
-				wallTextures[i].texture_buffer = (uint32_t*)upng_get_buffer(upng);
-			}
+			if (upng_get_error(upng) == UPNG_EOK)
+				textures[i] = upng;
+			else
+				printf("Error decoding texture %s\n", textureFilenames[i]);
 		} else {
-			fprintf(stderr, "Couldn't find .png file.\n");
+			fprintf(stderr, "Error loading texture %s\n", textureFilenames[i]);
 		}
 	}
 }
 
-void freeWallTextures(void) {
+void freeTextures(void) {
 	for (int i = 0; i < NUM_TEXTURES; i++) {
-		upng_free(wallTextures[i].upngTexture);
+		upng_free(textures[i]);
 	}
 }
