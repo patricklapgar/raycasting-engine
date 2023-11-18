@@ -6,6 +6,7 @@
 #include "definitions.h"
 #include "graphics.h"
 #include "map.h"
+#include "utils.h"
 
 typedef struct {
 	float x;
