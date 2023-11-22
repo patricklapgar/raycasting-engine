@@ -44,9 +44,31 @@ void renderSpriteProjection(void) {
 		}
 	}
 
-	// Draw projected sprite(s) at their correct x,y positions
+	// Draw visible sprite(s) at their correct x,y positions
 	for (int i = 0; i < numVisibleSprites; i++) {
+		sprite_t sprite = visibleSprites[i];
 
+		float spriteHeight = (TILE_SIZE / sprite.distance) * DIST_PROJ_PLANE;
+		float spriteWidth = spriteHeight;
+		
+		float spriteTopY = (WINDOW_HEIGHT / 2) - (spriteHeight / 2);
+		spriteTopY = (spriteTopY < 0) ? 0 : spriteTopY;
+		
+		float spriteBottomY = (WINDOW_HEIGHT / 2) + (spriteHeight / 2);
+		spriteBottomY = (spriteBottomY > WINDOW_HEIGHT) ? WINDOW_HEIGHT : spriteBottomY;
+	
+		float spriteAngle = atan2(sprite.y - player.y, sprite.x - player.x) - player.rotationAngle;
+		float spriteScreenPosX = tan(spriteAngle * DIST_PROJ_PLANE);
+
+		float spriteLeftX = (WINDOW_WIDTH / 2) + spriteScreenPosX;
+		float spriteRightX = spriteLeftX + spriteWidth;
+
+		for (int x = spriteLeftX; x < spriteRightX; x++) {
+			for (int y = spriteTopY; y < spriteBottomY; y++) {
+				if(x > 0 && x < WINDOW_WIDTH && y > 0 && y < WINDOW_HEIGHT)
+					drawPixel(x, y, 0xFFFF0000);
+			}
+		}
 	}
 
 }
